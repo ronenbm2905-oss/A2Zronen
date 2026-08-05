@@ -41,8 +41,20 @@
 | `src/app/(auth)/forgot-password/page.tsx` | דף שכחתי סיסמה | ניתוב |
 | `src/app/api/v1/auth/bootstrap/route.ts` | `POST` — יוצר את מסמך המראה `users/{uid}` | שרת — [[api-routes]] |
 
+### "לא הגיע מייל איפוס" — קודם לשלול כתובת שגויה
+
+`ForgotPasswordForm` בולע `auth/user-not-found` ומציג את מסך ההצלחה בכל מקרה, כדי
+לא לספק אורקל למניית חשבונות. התוצאה: **כתובת שגויה נראית בדיוק כמו הצלחה**, ואף
+מייל לא נשלח. לכן הבדיקה הראשונה היא תמיד "איזה חשבונות בכלל קיימים", דרך
+`listUsers` ב-Admin SDK — ולא "למה SMTP לא עובד".
+
+כשצריך לעקוף את הדוא״ל לגמרי: `getAuth().generatePasswordResetLink(email)` מייצר
+את אותו קישור בדיוק (`a2zronen.firebaseapp.com/__/auth/action?mode=resetPassword`),
+חד-פעמי ולשעה. המשתמש עדיין בוחר את הסיסמה בעצמו בדף של Firebase.
+
 ## Open Questions
 - `checkRevoked: false` — התנתקות לא מבטלת טוקנים קיימים מיידית. יש להפוך ל-`true` אם ביטול מיידי יהפוך לדרישה.
+- החשבון היחיד בפרויקט הוא `ronenbm@promall.co.il` — דומיין ארגוני. מיילים מ-`noreply@a2zronen.firebaseapp.com` עלולים ליפול שם ב-SPF/DMARC; לא נבדק.
 - אין אימות אימייל בפועל: `AuthUser.emailVerified` נקרא מהטוקן אך שום שער או endpoint לא בודק אותו.
 - אין ספקי OAuth (Google וכו') — רק אימייל/סיסמה.
 
@@ -53,3 +65,17 @@
 - **Decisions:** אוחד למודול אחד למרות שהקבצים מפוזרים בארבע תיקיות — אימות הוא חתך אנכי, ופיצול לפי תיקייה היה מסתיר את הזרימה.
 - **Notes / Caveats:** ה-re-throw של `CONFIG_ERROR` ב-`require-user.ts` נראה כמו קוד מיותר אבל הוא נושא משקל — אל תסירו אותו.
 - **Related:** [[api-routes]], [[services-server]], [[firebase-integration]], [[layout-shell]], [[settings-feature]], [[app-routing]]
+
+### 2026-08-06 — "לא מגיע מייל איפוס" [debug]
+- **What was done:** אבחון בלי שינוי קוד. `listUsers` הראה **חשבון אחד בלבד**:
+  `ronenbm@promall.co.il` (uid `hdUrZh…`, ספק `password`, נוצר 05-08 17:53) — אותו
+  uid שמחזיק את חיבור ה-Telegram. החשד המרכזי: הוקלדה כתובת אחרת, וה-form הציג
+  מסך הצלחה בלי לשלוח דבר. הופק קישור איפוס ב-`generatePasswordResetLink`
+  ונמסר כקובץ.
+- **Decisions:** קישור במקום שינוי סיסמה מהצד שלי. `updateUser({password})` היה
+  פותר את התסמין אבל מחייב אותי להמציא ולהעביר סיסמה; הקישור משאיר את הבחירה
+  אצל המשתמש בדף של Firebase. הקישור נמסר כקובץ ולא הודפס בצ׳אט.
+- **Notes / Caveats:** הבליעה של `auth/user-not-found` היא החלטת אבטחה נכונה, אבל
+  היא **הסיבה שהתקלה הזו מבלבלת** — אין שום הבדל ויזואלי בין כתובת שגויה להצלחה.
+  לא אומת אם המייל המקורי נשלח ונחסם, או שמעולם לא נשלח.
+- **Related:** [[firebase-integration]], [[firebase-env-setup]], [[errors-handling]]

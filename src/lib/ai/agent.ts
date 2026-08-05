@@ -262,12 +262,26 @@ export async function runAgentTurn(
       return {
         reply: preview,
         pendingAction: pending,
-        // The preview is recorded as the assistant's turn so a follow-up like
-        // "actually make it urgent" has something to refer back to.
+        // Recorded as an internal note, **not** as the preview verbatim.
+        //
+        // Storing the rendered preview put a perfect example of it in the
+        // model's own history, labelled as something the assistant says. The
+        // model then reproduced that text directly instead of calling the tool
+        // — which looks identical to the user but sets no pending action, so
+        // the following "כן" had nothing to confirm and the change never
+        // happened. Each imitation added another example, so the failure was
+        // self-reinforcing and only appeared once a conversation had one
+        // successful confirmation in it.
+        //
+        // The note still carries what a follow-up like "actually make it
+        // urgent" needs to refer back to, in a shape that is useless to copy.
         history: trimHistory([
           ...history,
           { role: "user", content: input.message },
-          { role: "assistant", content: preview },
+          {
+            role: "assistant",
+            content: `(מערכת: הוצגה בקשת אישור ל-${pending.tool} עם ${JSON.stringify(pending.args)})`,
+          },
         ]),
       };
     }
