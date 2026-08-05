@@ -1,0 +1,424 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ==========================================================================
+   Design System — doritplus.co.il ("תנועה פלוס")
+   --------------------------------------------------------------------------
+   Three layers, in order:
+     1. Brand primitives  — raw brand values. Never used directly in components.
+     2. Semantic tokens   — what components consume (shadcn contract + extras).
+     3. Theme registration — exposes tokens to Tailwind as utilities.
+
+   Brand values are kept as hex so they stay verifiable against the live site;
+   derived states use color-mix(in oklch, ...) for perceptually even blending.
+   ========================================================================== */
+
+/* ==========================================================================
+   LAYER 1 — Brand primitives
+   ========================================================================== */
+
+:root {
+  /* Brand sky — the primary brand color. 500 is the exact value used on the
+     site for pill buttons, the main H2, and section backgrounds. */
+  --brand-sky-50: #f0f9fd;
+  --brand-sky-100: #dcf0fa;
+  --brand-sky-200: #b9e2f5;
+  --brand-sky-300: #8fd1ee;
+  --brand-sky-400: #5bbbe6;
+  --brand-sky-500: #25a6dc;
+  --brand-sky-600: #1b87b8;
+  --brand-sky-700: #166b92;
+  --brand-sky-800: #14566f;
+  --brand-sky-900: #123f52;
+
+  /* Deep blue — section backgrounds and the start of the hero gradient. */
+  --brand-blue: #3465a0;
+
+  /* Navy — the site's text color, and the base of the dark theme. */
+  --brand-navy: #0e1840;
+  --brand-navy-800: #16204a;
+  --brand-navy-700: #1e2b5c;
+
+  /* Supporting brand colors. */
+  --brand-slate: #3d4459;
+  --brand-rose: #cc3366;
+  --brand-yellow: #ffde00;
+
+  /* Neutral surfaces measured from the site. */
+  --brand-border: #e7e7e7;
+  --brand-surface-soft: #f8f8f8;
+
+  /* Signature gradients. The hero gradient is measured verbatim. */
+  --gradient-brand: linear-gradient(180deg, #3465a0 0%, #27a6dd 84%);
+  --gradient-surface: linear-gradient(to bottom right, #ffffff, #f8f8f8);
+}
+
+/* ==========================================================================
+   LAYER 2 — Semantic tokens (light)
+   ========================================================================== */
+
+:root {
+  --radius: 1rem;
+
+  --background: #ffffff;
+  --foreground: var(--brand-navy);
+
+  --card: #ffffff;
+  --card-foreground: var(--brand-navy);
+  --popover: #ffffff;
+  --popover-foreground: var(--brand-navy);
+
+  /* Primary keeps the exact brand sky. Its foreground is navy rather than the
+     site's white: white on #25A6DC measures 2.78:1, which fails WCAG AA (and
+     even AA-large). Navy on the same blue measures 6.14:1 — the brand color is
+     preserved exactly and the text becomes legible. */
+  --primary: var(--brand-sky-500);
+  --primary-foreground: var(--brand-navy);
+  /* Use when light-on-blue is required (dense/small type). 5.9:1. */
+  --primary-strong: var(--brand-sky-700);
+  --primary-strong-foreground: #ffffff;
+
+  --secondary: #e9f3fa;
+  --secondary-foreground: var(--brand-navy);
+
+  --muted: #f5f7fa;
+  --muted-foreground: var(--brand-slate);
+
+  /* NOTE: shadcn's --accent is the *hover surface* for ghost/outline controls,
+     not a brand accent. It must stay subtle. The real brand accents are
+     --highlight (CTA yellow) and --brand-rose, declared below. */
+  --accent: #dcedf8;
+  --accent-foreground: var(--brand-navy);
+
+  /* CTA yellow — the site's three hero call-to-action links. */
+  --highlight: var(--brand-yellow);
+  --highlight-foreground: var(--brand-navy);
+
+  /* Rose accent. Foreground is the accessible text pairing on light surfaces. */
+  --brand-rose-foreground: #ffffff;
+
+  --border: var(--brand-border);
+  --input: var(--brand-border);
+  --ring: var(--brand-sky-500);
+
+  /* --- States ------------------------------------------------------------
+     Each state has a solid surface (white text on it), and a subtle surface
+     (the solid color used as text on it). Both pairings clear WCAG AA. */
+  /* #c42121 rather than a lighter red so it clears AA both as a solid surface
+     (5.9:1 with white) and as text on --destructive-subtle (5.1:1). */
+  --destructive: #c42121;
+  --destructive-foreground: #ffffff;
+  --destructive-subtle: #fdecec;
+
+  --success: #0b7a52;
+  --success-foreground: #ffffff;
+  --success-subtle: #e7f6ef;
+
+  --warning: #8a6100;
+  --warning-foreground: #ffffff;
+  --warning-subtle: #fff6db;
+
+  --info: var(--brand-sky-700);
+  --info-foreground: #ffffff;
+  --info-subtle: #e4f4fb;
+
+  /* Categorical data series, brand-derived. */
+  --chart-1: var(--brand-sky-500);
+  --chart-2: var(--brand-blue);
+  --chart-3: var(--brand-rose);
+  --chart-4: #f5b700;
+  --chart-5: #0b7a52;
+
+  --sidebar: #f7fafd;
+  --sidebar-foreground: var(--brand-navy);
+  --sidebar-primary: var(--brand-sky-500);
+  --sidebar-primary-foreground: var(--brand-navy);
+  --sidebar-accent: #dcedf8;
+  --sidebar-accent-foreground: var(--brand-navy);
+  --sidebar-border: var(--brand-border);
+  --sidebar-ring: var(--brand-sky-500);
+}
+
+/* ==========================================================================
+   LAYER 2 — Semantic tokens (dark)
+   --------------------------------------------------------------------------
+   The source site has no dark mode. This palette is derived from the brand
+   navy, with the sky lightened so it holds contrast against dark surfaces.
+   ========================================================================== */
+
+.dark {
+  --background: #0b1230;
+  --foreground: #f2f5fb;
+
+  --card: var(--brand-navy-800);
+  --card-foreground: #f2f5fb;
+  --popover: var(--brand-navy-800);
+  --popover-foreground: #f2f5fb;
+
+  /* #25A6DC is too dark against a navy background; lightened to #4FBCEA,
+     which pairs with a deep navy foreground at 7.47:1. */
+  --primary: #4fbcea;
+  --primary-foreground: #08203a;
+  /* In dark mode the "strong" surface is lighter than the page, so its
+     foreground flips to navy — white on it would be unreadable (1.7:1). */
+  --primary-strong: var(--brand-sky-300);
+  --primary-strong-foreground: #08203a;
+
+  --secondary: var(--brand-navy-700);
+  --secondary-foreground: #f2f5fb;
+
+  --muted: var(--brand-navy-700);
+  --muted-foreground: #a8b2cc;
+
+  --accent: #24325f;
+  --accent-foreground: #f2f5fb;
+
+  --highlight: var(--brand-yellow);
+  --highlight-foreground: var(--brand-navy);
+
+  --brand-rose: #e8639a;
+  --brand-rose-foreground: #2a0a19;
+
+  --border: oklch(1 0 0 / 12%);
+  --input: oklch(1 0 0 / 16%);
+  --ring: #4fbcea;
+
+  --destructive: #f87171;
+  --destructive-foreground: #2b0808;
+  --destructive-subtle: #3a1414;
+
+  --success: #3dd598;
+  --success-foreground: #04231a;
+  --success-subtle: #10352a;
+
+  --warning: #ffce45;
+  --warning-foreground: #2b1f00;
+  --warning-subtle: #3a2e0d;
+
+  --info: #4fbcea;
+  --info-foreground: #08203a;
+  --info-subtle: #10304a;
+
+  --chart-1: #4fbcea;
+  --chart-2: #7aa2d8;
+  --chart-3: #e8639a;
+  --chart-4: #ffce45;
+  --chart-5: #3dd598;
+
+  --sidebar: var(--brand-navy-800);
+  --sidebar-foreground: #f2f5fb;
+  --sidebar-primary: #4fbcea;
+  --sidebar-primary-foreground: #08203a;
+  --sidebar-accent: #24325f;
+  --sidebar-accent-foreground: #f2f5fb;
+  --sidebar-border: oklch(1 0 0 / 12%);
+  --sidebar-ring: #4fbcea;
+}
+
+/* ==========================================================================
+   LAYER 3 — Theme registration (Tailwind utilities)
+   ========================================================================== */
+
+@theme inline {
+  /* --- Typography ---
+     Fredoka carries the brand's rounded warmth on headings and buttons; Rubik
+     handles body and dense UI, where Fredoka's display shapes hurt legibility.
+     Both ship a real Hebrew subset. Variables come from next/font in layout.tsx. */
+  --font-sans: var(--font-rubik), system-ui, -apple-system, sans-serif;
+  --font-heading: var(--font-fredoka), var(--font-rubik), system-ui, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  /* Display scale, taken from the measured heading sizes on the site. */
+  --text-display-sm: 1.8125rem; /* 29px */
+  --text-display-md: 1.9375rem; /* 31px */
+  --text-display-lg: 2.5625rem; /* 41px — H1 */
+  --text-display-xl: 3.4375rem; /* 55px */
+  --text-display-2xl: 4.375rem; /* 70px — hero H2 */
+
+  /* The site's body rhythm: 18px at 1.7. */
+  --leading-body: 1.7;
+  --leading-heading: 1.2;
+
+  /* --- Spacing ---
+     Tailwind's 0.25rem step is kept; these add semantic vertical rhythm
+     (p-section, py-block, gap-section, ...). */
+  --spacing-block: 2.5rem;
+  --spacing-section: 5rem;
+
+  /* --- Radius ---
+     --radius: 1rem yields sm 9.6px / md 12.8px / lg 16px / xl 22.4px, matching
+     the 4–20px cluster measured on the site. Buttons use the pill. */
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+  --radius-pill: 9999px;
+
+  /* --- Shadows ---
+     The site uses large-blur / low-opacity shadows and no tight drop shadows.
+     Tinted with brand navy rather than pure black so they sit in the palette. */
+  --shadow-2xs: 0 1px 2px color-mix(in oklch, var(--brand-navy) 5%, transparent);
+  --shadow-xs: 0 2px 8px color-mix(in oklch, var(--brand-navy) 6%, transparent);
+  --shadow-sm: 0 2px 15px color-mix(in oklch, var(--brand-navy) 8%, transparent);
+  --shadow-md: 0 4px 22px color-mix(in oklch, var(--brand-navy) 10%, transparent);
+  --shadow-lg: 0 0 30px color-mix(in oklch, var(--brand-navy) 12%, transparent);
+  --shadow-xl: 0 18px 40px -12px
+    color-mix(in oklch, var(--brand-navy) 18%, transparent);
+  --shadow-2xl: 0 30px 60px -20px
+    color-mix(in oklch, var(--brand-navy) 24%, transparent);
+
+  /* --- Colors: semantic --- */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-strong: var(--primary-strong);
+  --color-primary-strong-foreground: var(--primary-strong-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-highlight: var(--highlight);
+  --color-highlight-foreground: var(--highlight-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* --- Colors: states --- */
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-destructive-subtle: var(--destructive-subtle);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-success-subtle: var(--success-subtle);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-warning-subtle: var(--warning-subtle);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-info-subtle: var(--info-subtle);
+
+  /* --- Colors: charts --- */
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  /* --- Colors: sidebar --- */
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* --- Colors: raw brand ramp ---
+     Available as bg-brand-sky-500, text-brand-navy, ... for cases the semantic
+     tokens don't cover. Prefer the semantic tokens above. */
+  --color-brand-sky-50: var(--brand-sky-50);
+  --color-brand-sky-100: var(--brand-sky-100);
+  --color-brand-sky-200: var(--brand-sky-200);
+  --color-brand-sky-300: var(--brand-sky-300);
+  --color-brand-sky-400: var(--brand-sky-400);
+  --color-brand-sky-500: var(--brand-sky-500);
+  --color-brand-sky-600: var(--brand-sky-600);
+  --color-brand-sky-700: var(--brand-sky-700);
+  --color-brand-sky-800: var(--brand-sky-800);
+  --color-brand-sky-900: var(--brand-sky-900);
+  --color-brand-blue: var(--brand-blue);
+  --color-brand-navy: var(--brand-navy);
+  --color-brand-navy-800: var(--brand-navy-800);
+  --color-brand-navy-700: var(--brand-navy-700);
+  --color-brand-slate: var(--brand-slate);
+  --color-brand-rose: var(--brand-rose);
+  --color-brand-rose-foreground: var(--brand-rose-foreground);
+  --color-brand-yellow: var(--brand-yellow);
+}
+
+/* ==========================================================================
+   Base layer
+   ========================================================================== */
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  html {
+    @apply font-sans;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    line-height: var(--leading-body);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-heading;
+    font-weight: 500;
+    line-height: var(--leading-heading);
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  ::selection {
+    background-color: color-mix(in oklch, var(--primary) 30%, transparent);
+    color: var(--foreground);
+  }
+
+  /* Keyboard focus stays visible everywhere, including inside RTL layouts. */
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+}
+
+/* ==========================================================================
+   Utilities
+   ========================================================================== */
+
+@layer utilities {
+  /* The site's signature hero surface. */
+  .bg-gradient-brand {
+    background-image: var(--gradient-brand);
+  }
+
+  /* Soft white-to-grey card surface. */
+  .bg-gradient-surface {
+    background-image: var(--gradient-surface);
+  }
+
+  .text-gradient-brand {
+    background-image: var(--gradient-brand);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+}
