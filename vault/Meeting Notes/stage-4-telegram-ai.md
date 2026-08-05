@@ -39,12 +39,14 @@ chatId                                → הצ׳אט הזה תפס את הבוט
 ```
 
 ## Open Questions
-- **מסלול הדליברי של Telegram עצמו עדיין לא נבדק.** ב-2026-08-05 אומת הכל
-  מקצה-לקצה דרך ריליי `getUpdates` מקומי, אבל `setWebhook` בפועל דורש מנהרה
-  ציבורית ו-`APP_BASE_URL`. מה שלא נבדק: שהכותרת `X-Telegram-Bot-Api-Secret-Token`
-  אכן מגיעה מ-Telegram, ושרישום ה-Webhook שורד.
+- **הצעד הבא, וזה החוסם היחיד:** לתת `roles/iam.serviceAccountTokenCreator`
+  ל-`firebase-app-hosting-compute@a2zronen` ב-**Google Cloud console**
+  (`console.cloud.google.com/iam-admin/iam?project=a2zronen`) — לא בקונסולה של
+  Firebase. לאמת ש-`adminCanSignTokens` הפך ל-`true`, ואז ליצור משימה מהבוט.
+  חלופה: `FIREBASE_PRIVATE_KEY` דרך Secret Manager ב-`apphosting.yaml`.
 - החוקים החדשים ב-`firestore.rules` לא נפרסו. לא חוסם (ה-default deny כבר מכסה),
   אבל שווה פריסה.
+- `/api/health` מדווח `environment: development` בפרודקשן — ראה [[firebase-env-setup]].
 - **`OPENAI_API_KEY` כתוב ב-`.env.local` באותיות קטנות** (`openai_api_key`). עובד
   רק כי `process.env` ב-Windows אינו רגיש לרישיות; פריסה ל-Linux תשבור את ה-agent
   בשקט. לתקן לפני deploy.
@@ -105,3 +107,25 @@ chatId                                → הצ׳אט הזה תפס את הבוט
   ל-Open Questions: `openai_api_key` באותיות קטנות (עובד רק ב-Windows), ומשימה
   ישנה עם `dueDate` בשנת 1906.
 - **Related:** [[telegram-integration]], [[ai-agent]], [[config-env]], [[api-routes]], [[services-server]], [[tasks-feature]], [[firebase-env-setup]]
+
+### 2026-08-06 — הבוט בפרודקשן: שלושה כשלים שנפרדו זה מזה [wip]
+- **What was done:** הבוט לא הגיב בכלל. `getWebhookInfo` הראה `url: (none)` ו-5
+  עדכונים תקועים — הרישום נמחק אתמול כי רק `localhost` היה זמין, ומאז אף אחד לא
+  לחץ «בדיקת חיבור». נרשם Webhook לכתובת הפרודקשן; אומת ש-3 סוגי בקשה מזויפת
+  מקבלים 401. אחר כך התגלו **שני באגים נפרדים**:
+  (1) ה-agent חיקה את תצוגת האישור של עצמו במקום לקרוא לכלי — ראה [[ai-agent]].
+  תוקן ונפרס; אומת שהמודל שוב קורא ל-`create_task`.
+  (2) האישור עצמו נכשל: `createCustomToken` לא מצליח לחתום בפרודקשן. **זו רגרסיה
+  שנוצרה באותו יום** מהמעבר ל-ADC — ראה [[firebase-integration]]. נוסף דגל
+  `adminCanSignTokens` ל-`/api/health`, והוא הכריע: `true` מקומית, `false` בענן.
+- **Decisions:** לא שונתה שום הרשאה ולא נוצר סוד לפני שהאבחון הוכח — הדגל נבנה
+  קודם. הדגל נשאר בקוד לצמיתות: `firebaseAdminConfigured` הוא `true` בשני
+  המקומות, ולכן בלעדיו אין שום דבר שמבדיל בין המצבים.
+  שני מסלולי תיקון הוצגו למשתמש: מתן `roles/iam.serviceAccountTokenCreator`
+  (מועדף — אין מפתח לנהל) או החזרת `FIREBASE_PRIVATE_KEY` דרך Secret Manager.
+- **Notes / Caveats:** **הסשן נעצר לפני התיקון.** נכון לסיום: הרישום תקין, באג
+  החיקוי סגור, ופעולות משנות עדיין נכשלות ברגע האישור. הצעד הבא הוא הרשאה אחת
+  בקונסולה של Google Cloud (לא של Firebase — זו הייתה נקודת הבלבול האחרונה).
+  לקח כללי: שלושת הכשלים נראו זהים מבחוץ ("הבוט לא עובד") ונדרשו שלושה אבחונים
+  שונים לגמרי.
+- **Related:** [[ai-agent]], [[telegram-integration]], [[firebase-integration]], [[firebase-env-setup]], [[config-env]], [[auth]]
