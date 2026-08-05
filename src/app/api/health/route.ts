@@ -6,6 +6,7 @@ import {
   isSecretEncryptionConfigured,
 } from "@/config/server-env";
 import { withApiHandler } from "@/lib/api";
+import { canSignCustomTokens } from "@/lib/firebase/admin";
 import { toIsoString } from "@/utils";
 
 /**
@@ -33,6 +34,12 @@ export const GET = withApiHandler(async () => ({
   environment: env.appEnv,
   firebaseConfigured: isFirebaseConfigured,
   firebaseAdminConfigured: isFirebaseAdminConfigured,
+  // Separate from the flag above on purpose: the Admin SDK can be fully
+  // authenticated and still unable to sign a custom token, which takes the
+  // Telegram agent down while every other server path keeps working.
+  adminCanSignTokens: isFirebaseAdminConfigured
+    ? await canSignCustomTokens()
+    : false,
   openaiConfigured: isOpenAiConfigured,
   secretEncryptionConfigured: isSecretEncryptionConfigured,
   timestamp: toIsoString(),

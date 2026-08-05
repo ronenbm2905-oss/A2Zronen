@@ -17,6 +17,7 @@ import {
   serverEnv,
 } from "@/config/server-env";
 import { AppError } from "@/lib/errors";
+import { logger } from "@/lib/logger";
 
 /**
  * Firebase Admin SDK connection point — the only writer in this system.
@@ -90,6 +91,33 @@ export function getAdminApp(): App {
 
 export function getAdminAuth(): Auth {
   return getAuth(getAdminApp());
+}
+
+/**
+ * Can this process **sign** a custom token?
+ *
+ * Being authenticated and being able to sign are not the same capability, and
+ * the difference is invisible until something needs the second one. With an
+ * explicit service-account key the SDK signs locally. On Application Default
+ * Credentials there is no key, so it delegates to Google's IAM signBlob API —
+ * which the runtime service account may not be allowed to call.
+ *
+ * `@/lib/ai/api-caller` mints a token per agent action, so when this is false
+ * every Telegram change fails at the moment the user confirms it, and the bot
+ * can only report a generic failure. Reported as a flag because that symptom
+ * gives no hint of the cause.
+ *
+ * The uid is never looked up — `createCustomToken` only signs a JWT, so this
+ * neither creates nor requires an account.
+ */
+export async function canSignCustomTokens(): Promise<boolean> {
+  try {
+    await getAdminAuth().createCustomToken("health-check-probe");
+    return true;
+  } catch (error) {
+    logger.warn("Admin SDK cannot sign custom tokens", { error });
+    return false;
+  }
 }
 
 export function getAdminDb(): Firestore {

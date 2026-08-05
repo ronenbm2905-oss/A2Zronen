@@ -178,6 +178,8 @@
   },
   "active": "1eb035d7abc28f5d",
   "lastOpenFiles": [
+    "node_modules/openai/resources/realtime/calls.mjs.map",
+    "node_modules/openai/index.mjs.map",
     "node_modules/openai/src/resources/admin/organization/projects/users/users.ts",
     "node_modules/openai/src/resources/admin/organization/projects/users/roles.ts",
     "node_modules/openai/src/resources/admin/organization/projects/users/index.ts",
@@ -187,8 +189,6 @@
     "node_modules/openai/src/resources/admin/organization/projects/groups/roles.ts",
     "node_modules/openai/src/resources/admin/organization/projects/groups/index.ts",
     "node_modules/openai/src/resources/admin/organization/projects/groups/groups.ts",
-    "node_modules/openai/src/resources/beta/threads/runs/steps.ts",
-    "node_modules/openai/src/resources/beta/threads/runs/runs.ts",
     "node_modules/openai/src/_vendor/zod-to-json-schema/README.md",
     "node_modules/openai/src/_vendor/partial-json-parser/README.md",
     "node_modules/openai/src/resources/webhooks/api.md",
