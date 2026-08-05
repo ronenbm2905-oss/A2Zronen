@@ -1,0 +1,103 @@
+# Firebase App Hosting configuration.
+#
+# Why this file has to exist: Next.js inlines every `NEXT_PUBLIC_*` variable
+# into the browser bundle **at build time**, by textual substitution. App
+# Hosting builds in a clean Cloud Build container that has never seen
+# `.env.local`, so without the `BUILD` availability below the substitution
+# produces `undefined`, `isFirebaseConfigured` is false, and the login screen
+# reports that Firebase is not configured — which is exactly what it did.
+#
+# Setting these in the console instead does not work: console variables reach
+# the running container, and by then the bundle is already built.
+#
+# These seven values are **not secrets**. They ship inside the JavaScript every
+# visitor downloads; access is controlled by `firestore.rules` and Firebase
+# Auth, never by their obscurity. Real secrets belong in Secret Manager and are
+# referenced with `secret:` rather than `value:`.
+#
+# The Admin SDK credentials are deliberately absent — on App Hosting the
+# container runs as a service account and `@/lib/firebase/admin` picks it up
+# through Application Default Credentials. See that file.
+
+runConfig:
+  # A single small instance, scaled to zero when idle: this is a personal
+  # deployment, and a cold start costs less than an instance kept warm.
+  minInstances: 0
+  maxInstances: 2
+  concurrency: 80
+  cpu: 1
+  memoryMiB: 512
+
+env:
+  # --- Firebase Web SDK: needed at BUILD, or they never reach the bundle ---
+  - variable: NEXT_PUBLIC_FIREBASE_API_KEY
+    value: "AIzaSyDSuoncroVUMMowTeVryh_2LFGZAuBtR3s"
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+    value: "a2zronen.firebaseapp.com"
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    value: "a2zronen"
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+    value: "a2zronen.firebasestorage.app"
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+    value: "943983269399"
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_FIREBASE_APP_ID
+    value: "1:943983269399:web:9dd5071f9f981513932e52"
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
+    value: "G-ERNSYT0ZQE"
+    availability:
+      - BUILD
+      - RUNTIME
+
+  # Drives `env.isProduction`; also read at build time.
+  - variable: NEXT_PUBLIC_APP_ENV
+    value: "production"
+    availability:
+      - BUILD
+      - RUNTIME
+
+  # --- Server-side, runtime only ---
+
+  # The Admin SDK infers the project from the service account, but
+  # `isFirebaseAdminConfigured` reports on an explicit value, so state it.
+  - variable: FIREBASE_PROJECT_ID
+    value: "a2zronen"
+    availability:
+      - RUNTIME
+
+  # Where Telegram should call back. Stated explicitly rather than inferred from
+  # the request origin, which passes through Google's proxy before reaching us.
+  - variable: APP_BASE_URL
+    value: "https://a2zronen--a2zronen.europe-west4.hosted.app"
+    availability:
+      - RUNTIME
+
+# Not declared here, and intentionally so: OPENAI_API_KEY and
+# SECRET_ENCRYPTION_KEY are already configured on the backend and are real
+# secrets. Re-declaring them as plaintext `value:` entries would publish them
+# in this repository. If a rollout ever drops them, move them into Secret
+# Manager with `firebase apphosting:secrets:set` and reference them with
+# `secret:` here — never with `value:`.

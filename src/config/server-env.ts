@@ -110,12 +110,41 @@ export const serverEnv = {
   appBaseUrl: values.APP_BASE_URL,
 } as const;
 
-/** True only when all three credential fields are present. */
-export const isFirebaseAdminConfigured: boolean = Boolean(
+/**
+ * Whether a service-account key was pasted into `.env.local`. This is how the
+ * Admin SDK authenticates off Google infrastructure — in practice, locally.
+ */
+export const hasAdminServiceAccountKey: boolean = Boolean(
   serverEnv.firebaseAdmin.projectId &&
     serverEnv.firebaseAdmin.clientEmail &&
     serverEnv.firebaseAdmin.privateKey,
 );
+
+/**
+ * Whether Application Default Credentials are available.
+ *
+ * On App Hosting the container runs as a service account and the Admin SDK can
+ * authenticate with no key at all, so requiring `FIREBASE_PRIVATE_KEY` there
+ * would mean minting a downloadable key and storing it in Secret Manager to
+ * re-supply a credential the runtime already holds. Each of these variables is
+ * set by the platform, never by us:
+ *
+ * - `K_SERVICE` — Cloud Run, which is what App Hosting deploys onto.
+ * - `FIREBASE_CONFIG` — injected by Firebase-managed runtimes.
+ * - `GOOGLE_APPLICATION_CREDENTIALS` — a key file path; the local ADC opt-in.
+ *
+ * A false positive costs an honest `CONFIG_ERROR` on the first admin call, the
+ * same failure the missing-key path produces.
+ */
+export const hasApplicationDefaultCredentials: boolean = Boolean(
+  blankToUndefined(process.env.K_SERVICE) ??
+    blankToUndefined(process.env.FIREBASE_CONFIG) ??
+    blankToUndefined(process.env.GOOGLE_APPLICATION_CREDENTIALS),
+);
+
+/** True when the Admin SDK can authenticate by either route. */
+export const isFirebaseAdminConfigured: boolean =
+  hasAdminServiceAccountKey || hasApplicationDefaultCredentials;
 
 /** True when the AI agent can be reached. Checked before answering a message. */
 export const isOpenAiConfigured: boolean = Boolean(serverEnv.openai.apiKey);
