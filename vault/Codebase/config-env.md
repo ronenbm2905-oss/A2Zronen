@@ -19,6 +19,17 @@
 | `src/config/env.ts` | סכמת Zod ל-7 משתני `NEXT_PUBLIC_FIREBASE_*` + `NEXT_PUBLIC_APP_ENV`. מייצא `env`, `isFirebaseConfigured`, טיפוסי `Env` / `AppEnv`. ריק/רווחים נחשב "לא מוגדר" | לקוח **ושרת** — נצרך ע"י [[firebase-integration]], טפסי [[auth]], [[components-common]] |
 | `src/config/server-env.ts` | סכמת Zod לכל סוד שהשרת מחזיק: service account (`FIREBASE_*`), `OPENAI_API_KEY` + `OPENAI_MODEL`, `SECRET_ENCRYPTION_KEY`, `APP_BASE_URL`. מייצא `serverEnv` ושלושה גייטים: `isFirebaseAdminConfigured`, `isOpenAiConfigured`, `isSecretEncryptionConfigured` | שרת בלבד — נצרך ע"י `lib/firebase/admin.ts` ב-[[firebase-integration]], [[ai-agent]], [[telegram-integration]] ובדיקת הבריאות ב-[[api-routes]] |
 | `.env.example` | תבנית של כל המשתנים הנדרשים (לא ב-`src`, מתועד כאן כי הוא החוזה של המודול) | תיעוד |
+| `apphosting.yaml` | **התצורה בפרודקשן.** 7 משתני `NEXT_PUBLIC_*` ב-`availability: [BUILD, RUNTIME]`, `NEXT_PUBLIC_APP_ENV=production`, `FIREBASE_PROJECT_ID` ו-`APP_BASE_URL` ב-`RUNTIME`, ו-`runConfig` | פריסה — Firebase App Hosting |
+
+### שני מקורות תצורה, לא אחד
+
+`.env.example` הוא החוזה, אבל **הוא לא ממלא את עצמו בשום סביבה**. בפיתוח הערכים
+באים מ-`.env.local`; ב-App Hosting מ-`apphosting.yaml`. משתנה שנוסף לקוד צריך
+להיכנס לשני המקומות — אחרת הוא עובד מקומית ושותק בענן.
+
+הכלל שקובע היכן: `NEXT_PUBLIC_*` נטבעים ב-bundle **בזמן build**, ולכן חייבים
+`BUILD` ב-`availability`. הגדרה שלהם בזמן ריצה בלבד (קונסולה, Cloud Run) לא
+תעבוד לעולם — הבאנדל כבר נבנה. משתני שרת נקראים בזמן ריצה, ולכן `RUNTIME` מספיק.
 
 ### מה **לא** נמצא כאן
 
@@ -32,7 +43,9 @@
 ## Open Questions
 - `NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID` נקרא ומאומת אך אף מודול לא צורך אותו — Analytics לא מאותחל בשום מקום.
 - `env.appEnv` משמש רק לבקרת פירוט השגיאות ב-`ErrorState`; אין הבדל התנהגותי אחר בין staging ל-production.
-- `APP_BASE_URL` אופציונלי; ללא מנהרה ציבורית Telegram פשוט לא ימסור עדכונים בסביבה מקומית.
+- `APP_BASE_URL` אופציונלי; ללא מנהרה ציבורית Telegram פשוט לא ימסור עדכונים בסביבה מקומית. בפרודקשן הוא מוגדר ב-`apphosting.yaml`.
+- `OPENAI_API_KEY` ו-`SECRET_ENCRYPTION_KEY` **לא** מוצהרים ב-`apphosting.yaml` — הם סודות אמיתיים והריפו ציבורי. הם מוגדרים כרגע ברמת ה-backend; אם rollout יפיל אותם, המקום הנכון הוא Secret Manager עם `secret:` ולא `value:`.
+- ב-`.env.local` המקומי `OPENAI_API_KEY` כתוב באותיות קטנות. עובד רק כי `process.env` ב-Windows אינו רגיש לרישיות.
 
 ## Session Log
 
@@ -47,3 +60,22 @@
 - **Decisions:** הבוט טוקן **לא** נכנס לכאן — הוא נתון פר-משתמש, ולא היה מאפשר "החלפת בוט בלי שינוי קוד". `APP_BASE_URL` עובר `z.url()` ומנוקה מ-slash סופי, כי הוא משורשר לנתיב ה-webhook.
 - **Notes / Caveats:** `SECRET_ENCRYPTION_KEY` נוצר ונוסף ל-`.env.local` בסשן הזה; `OPENAI_API_KEY` כבר היה קיים בסביבה. אומת ב-`/api/health`: ארבעת הדגלים `true`.
 - **Related:** [[telegram-integration]], [[ai-agent]], [[api-routes]]
+
+### 2026-08-05 — `apphosting.yaml`: מקור התצורה השני [shipped]
+- **What was done:** נוצר `apphosting.yaml` בשורש. שבעת משתני `NEXT_PUBLIC_FIREBASE_*`
+  ו-`NEXT_PUBLIC_APP_ENV=production` הוצהרו עם `availability: [BUILD, RUNTIME]`;
+  `FIREBASE_PROJECT_ID` ו-`APP_BASE_URL` עם `RUNTIME` בלבד. נוסף `runConfig`
+  (0–2 instances, 1 CPU, 512MiB). הקובץ נוצר מתוך `.env.local` ע"י סקריפט ולא
+  הועתק ביד, כדי שתו שהוחלף לא ייכנס בשקט.
+- **Decisions:** הערכים הציבוריים נכתבו כ-`value:` גלוי, למרות שהריפו ציבורי —
+  הם נשלחים ממילא בכל באנדל לכל מבקר, והשליטה עליהם היא `firestore.rules`
+  ו-Firebase Auth ולא הסתרתם. `OPENAI_API_KEY` ו-`SECRET_ENCRYPTION_KEY`
+  **הושארו מחוץ לקובץ**: הם סודות אמיתיים, כרגע מוגדרים ברמת ה-backend, ו-`value:`
+  היה מפרסם אותם ב-GitHub. `APP_BASE_URL` הוגדר במפורש ולא הושאר לנפילה חזרה
+  ל-origin של הבקשה, שעובר דרך ה-proxy של Google לפני שהוא מגיע אלינו.
+- **Notes / Caveats:** הקובץ הזה הוא הסיבה שהמסך `FirebaseNotConfigured` הופיע
+  בפרודקשן — בהיעדרו הבנייה ב-Cloud Build לא רואה שום `NEXT_PUBLIC_*`.
+  **לא ידוע בוודאות** אם rollout שנשען על הקובץ ישמר את שני משתני הסוד שכבר
+  מוגדרים ברמת ה-backend; זו הסיבה שהאימות שאחרי הפריסה בודק את ארבעת הדגלים
+  ולא רק את שניים.
+- **Related:** [[firebase-env-setup]], [[firebase-integration]], [[telegram-integration]], [[api-routes]]

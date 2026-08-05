@@ -22,7 +22,7 @@
 | קובץ | מה הוא עושה | שייך ל־ |
 |---|---|---|
 | `src/lib/firebase/client.ts` | `readFirebaseConfig()` בונה `FirebaseOptions` מ-[[config-env]] או מחזיר `null`; `getFirebaseApp()`, `getFirebaseAuth()`, `getFirestoreDb()` מאתחלים בעצלתיים וזורקים `AppError` כשאין תצורה | לקוח — נצרך ע"י [[auth]] ו-[[services-client]] |
-| `src/lib/firebase/admin.ts` | אתחול Admin SDK מ-service account (`cert`). מייצא `getAdminApp()`, `getAdminAuth()`, `getAdminDb()` ומעביר הלאה את `isFirebaseAdminConfigured` | **שרת בלבד** — נצרך ע"י [[auth]] (`requireUser`) ו-[[services-server]] |
+| `src/lib/firebase/admin.ts` | אתחול Admin SDK **בשני מסלולים**: מפתח service account מפורש (`cert`) אם קיים, אחרת Application Default Credentials. מייצא `getAdminApp()`, `getAdminAuth()`, `getAdminDb()` ומעביר הלאה את `isFirebaseAdminConfigured` | **שרת בלבד** — נצרך ע"י [[auth]] (`requireUser`) ו-[[services-server]] |
 | `src/lib/firebase/converters.ts` | `tsToIso`, `tsToIsoRequired`, `readString`, `readStringArray`, `readNullableString`, `readNullableNumber`, `readEnum` — קריאה מגננתית של שדות מסמך. **משותף לשני ה-SDK-ים** | חוצה גבול — נצרך ע"י `services/server/refs.ts` ו-`services/client/refs.ts` |
 | `src/lib/firebase/index.ts` | barrel של צד הלקוח בלבד. מייצא את `client.ts` ואת `converters.ts`, ובמכוון **לא** את `admin.ts` | גבול מודול |
 | `firestore.rules` | בידוד רב-דיירי בשכבת ה-DB: `allow write: if false` בכל קולקציה, קריאה מוגבלת לבעלים דרך `owns(resource.data)`, `users/{uid}` לפי מזהה מסמך, `integrations` ו-`agentSessions` **דחויות לחלוטין**, ו-default deny לכל השאר | אבטחה — החוזה של [[services-client]] |
@@ -55,3 +55,18 @@
 - **Decisions:** דחייה גם לבעלים ולא רק כתיבה — הדפדפן לא צריך את המסמכים האלה, ודחיית הקריאה היא מה שהופך את פרויקציית הסטטוס לנתיב היחיד. `readNullableNumber` פוסל `NaN` במפורש: הוא `number` עבור `typeof`, שורד JSON כ-`null`, והיה מגיע ל-`sendMessage` כמזהה צ׳אט.
 - **Notes / Caveats:** **החוקים לא נפרסו בסשן הזה.** זה אינו חוסם: ה-default deny הקיים (`match /{document=**}`) כבר חוסם את שתי הקולקציות, וה-Admin SDK עוקף חוקים ממילא. הבלוקים המפורשים הופכים את הדחייה למכוונת ולא מקרית, ושווה לפרוס אותם בהזדמנות הבאה.
 - **Related:** [[telegram-integration]], [[ai-agent]], [[services-server]], [[firebase-env-setup]]
+
+### 2026-08-05 — Admin SDK בשני מסלולי אימות [shipped]
+- **What was done:** `admin.ts` כבר לא דורש `FIREBASE_CLIENT_EMAIL` + `FIREBASE_PRIVATE_KEY`.
+  מפתח service account מפורש עדיין מנצח כשהוא קיים; בהיעדרו נעשה שימוש ב-
+  `applicationDefault()`. `server-env.ts` פוצל בהתאם ל-`hasAdminServiceAccountKey`
+  ו-`hasApplicationDefaultCredentials`, ו-`isFirebaseAdminConfigured` הוא כעת
+  ה-OR של השניים. הזיהוי נשען על `K_SERVICE`, `FIREBASE_CONFIG` או
+  `GOOGLE_APPLICATION_CREDENTIALS` — כולם נכתבים ע"י הפלטפורמה, אף אחד לא על ידינו.
+- **Decisions:** המפתח המפורש קודם בכוונה — מפתח ב-`.env.local` שמצביע על פרויקט
+  אחר חייב לנצח, גם כשהמפתח מחובר ל-gcloud כמשהו אחר. הדרך החלופית הייתה ליצור
+  מפתח service account להורדה ולאחסן אותו ב-Secret Manager, כלומר להחזיר לריצה
+  אישור שכבר יש לה.
+- **Notes / Caveats:** זיהוי שגוי של ADC עולה `CONFIG_ERROR` בקריאת ה-admin הראשונה —
+  אותו כשל בדיוק שהמסלול של "אין מפתח" מייצר, ולכן אין כאן החמרה.
+- **Related:** [[config-env]], [[firebase-env-setup]], [[auth]], [[services-server]]
