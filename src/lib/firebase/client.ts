@@ -5,6 +5,8 @@ import {
   type FirebaseApp,
   type FirebaseOptions,
 } from "firebase/app";
+import { getAuth, type Auth } from "firebase/auth";
+import { getFirestore, type Firestore } from "firebase/firestore";
 
 import { env } from "@/config/env";
 import { AppError } from "@/lib/errors";
@@ -16,8 +18,14 @@ import { AppError } from "@/lib/errors";
  * so the app boots fine with an unconfigured `.env.local`. The failure surfaces
  * only when something actually asks for the app instance.
  *
- * Nothing calls `getFirebaseApp()` in this phase — it is the seam that Auth and
- * Firestore will be built on in the next one.
+ * `getFirebaseAuth()` and `getFirestoreDb()` are the two seams built on top of
+ * it. Firestore here is **read-only in practice**: `firestore.rules` denies every
+ * client write, so this SDK is used solely for `onSnapshot` subscriptions while
+ * all mutations go through `/api/v1`.
+ *
+ * Nothing in this module may be called during render or at module scope — the
+ * accessors throw when unconfigured, which would take down a prerender. Call
+ * them from `useEffect`, an event handler or a subscription setup.
  */
 
 let cachedApp: FirebaseApp | null = null;
@@ -81,4 +89,24 @@ export function getFirebaseApp(): FirebaseApp {
   cachedApp = getApps().length > 0 ? getApp() : initializeApp(config);
 
   return cachedApp;
+}
+
+/**
+ * Firebase Auth for the browser. The SDK caches its own instance per app, so no
+ * extra memoization is needed here.
+ *
+ * @throws {AppError} `CONFIG_ERROR` when Firebase is not configured.
+ */
+export function getFirebaseAuth(): Auth {
+  return getAuth(getFirebaseApp());
+}
+
+/**
+ * Firestore for the browser — realtime reads only. Writes are rejected by
+ * `firestore.rules`; use `@/lib/api-client` instead.
+ *
+ * @throws {AppError} `CONFIG_ERROR` when Firebase is not configured.
+ */
+export function getFirestoreDb(): Firestore {
+  return getFirestore(getFirebaseApp());
 }

@@ -1,0 +1,49 @@
+# Config & Environment
+
+## Overview
+
+`src/config` הוא **המקום היחיד** בקוד שקורא `process.env`. שלושה קבצים, כל אחד עם גבול ברור: קבועים סטטיים, סביבת לקוח, סביבת שרת.
+
+שני כללים שהמודול קיים כדי לאכוף:
+
+1. **כל קריאה ל-`process.env` היא גישה סטטית ומילולית.** Next.js מזריק משתני `NEXT_PUBLIC_*` בזמן build על ידי החלפה טקסטואלית — כך שגישה דינמית (`process.env[key]`) תיפתר בשקט ל-`undefined` ב-bundle של הדפדפן. לכן `env.ts` מונה את כל שבעת המשתנים במפורש.
+2. **הפרסינג לעולם לא זורק בזמן import.** `.env.local` לא מוגדר לא אמור למנוע מהאפליקציה לעלות. במקום זה נחשפים גייטים בוליאניים (`isFirebaseConfigured`, `isFirebaseAdminConfigured`) שהצרכנים בודקים, והכשל מתרחש בקול רם רק בנקודת השימוש.
+
+הגייטים האלה הם מה שמאפשר לאפליקציה לרוץ ולהציג את [[components-common]]`FirebaseNotConfigured` במקום להתרסק כשה-Firebase לא מחובר.
+
+## Files
+
+| קובץ | מה הוא עושה | שייך ל־ |
+|---|---|---|
+| `src/config/app.ts` | קבועים שלא תלויים בסביבה: `name`, `version`, `apiBasePath` (`/api`), `apiVersion` (`v1`), `requestIdHeader` (`x-request-id`). מיוצא כ-`appConfig` | תשתית — נצרך ע"י [[api-layer]], [[api-client]], [[build-tooling]] (proxy) |
+| `src/config/env.ts` | סכמת Zod ל-7 משתני `NEXT_PUBLIC_FIREBASE_*` + `NEXT_PUBLIC_APP_ENV`. מייצא `env`, `isFirebaseConfigured`, טיפוסי `Env` / `AppEnv`. ריק/רווחים נחשב "לא מוגדר" | לקוח **ושרת** — נצרך ע"י [[firebase-integration]], טפסי [[auth]], [[components-common]] |
+| `src/config/server-env.ts` | סכמת Zod לכל סוד שהשרת מחזיק: service account (`FIREBASE_*`), `OPENAI_API_KEY` + `OPENAI_MODEL`, `SECRET_ENCRYPTION_KEY`, `APP_BASE_URL`. מייצא `serverEnv` ושלושה גייטים: `isFirebaseAdminConfigured`, `isOpenAiConfigured`, `isSecretEncryptionConfigured` | שרת בלבד — נצרך ע"י `lib/firebase/admin.ts` ב-[[firebase-integration]], [[ai-agent]], [[telegram-integration]] ובדיקת הבריאות ב-[[api-routes]] |
+| `.env.example` | תבנית של כל המשתנים הנדרשים (לא ב-`src`, מתועד כאן כי הוא החוזה של המודול) | תיעוד |
+
+### מה **לא** נמצא כאן
+
+ה-Telegram Bot Token אינו משתנה סביבה. הוא נתון פר-משתמש, מגיע ממסך ההגדרות
+ונשמר מוצפן ב-Firestore — ולכן החלפת בוט אינה נוגעת בקובץ הזה ואינה דורשת פריסה
+מחדש. ראה [[telegram-integration]].
+
+`SECRET_ENCRYPTION_KEY` הוא המפתח שמצפין את אותם טוקנים. **סיבוב שלו מבטל כל טוקן
+שמור** — `openSecret` נכשל, וכל המשתמשים יצטרכו לחבר את הבוט מחדש.
+
+## Open Questions
+- `NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID` נקרא ומאומת אך אף מודול לא צורך אותו — Analytics לא מאותחל בשום מקום.
+- `env.appEnv` משמש רק לבקרת פירוט השגיאות ב-`ErrorState`; אין הבדל התנהגותי אחר בין staging ל-production.
+- `APP_BASE_URL` אופציונלי; ללא מנהרה ציבורית Telegram פשוט לא ימסור עדכונים בסביבה מקומית.
+
+## Session Log
+
+### 2026-08-05 — תיעוד ראשוני [shipped]
+- **What was done:** מיפוי שלושת קבצי התצורה, הגבול לקוח/שרת, ושני הכללים שהמודול אוכף.
+- **Decisions:** תועד כמודול נפרד ולא כחלק מ-[[build-tooling]], כי הגייטים שלו הם תלות התנהגותית של [[auth]] ו-[[firebase-integration]] — לא עניין של כלי בנייה.
+- **Notes / Caveats:** `server-env.ts` הוא קובץ חדש שלא נכנס ל-commit הראשוני.
+- **Related:** [[firebase-integration]], [[api-layer]], [[project-overview]]
+
+### 2026-08-05 — הרחבה לסודות שלב 4 [shipped]
+- **What was done:** `server-env.ts` קיבל `OPENAI_API_KEY`, `OPENAI_MODEL` (ברירת מחדל `gpt-4o-mini`), `SECRET_ENCRYPTION_KEY` ו-`APP_BASE_URL`, ושני גייטים חדשים. `/api/health` מדווח עליהם.
+- **Decisions:** הבוט טוקן **לא** נכנס לכאן — הוא נתון פר-משתמש, ולא היה מאפשר "החלפת בוט בלי שינוי קוד". `APP_BASE_URL` עובר `z.url()` ומנוקה מ-slash סופי, כי הוא משורשר לנתיב ה-webhook.
+- **Notes / Caveats:** `SECRET_ENCRYPTION_KEY` נוצר ונוסף ל-`.env.local` בסשן הזה; `OPENAI_API_KEY` כבר היה קיים בסביבה. אומת ב-`/api/health`: ארבעת הדגלים `true`.
+- **Related:** [[telegram-integration]], [[ai-agent]], [[api-routes]]

@@ -1,0 +1,218 @@
+{
+  "main": {
+    "id": "8b62b5d35b71e706",
+    "type": "split",
+    "children": [
+      {
+        "id": "e6c9bf59cf2e4fb5",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "1eb035d7abc28f5d",
+            "type": "leaf",
+            "state": {
+              "type": "graph",
+              "state": {},
+              "icon": "lucide-git-fork",
+              "title": "תצוגת גרף"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "ce2a2ebe8f48f396",
+    "type": "split",
+    "children": [
+      {
+        "id": "eb299528215a6811",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "4a5be78906a1b5b8",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "סייר קבצים"
+            }
+          },
+          {
+            "id": "b39cad0e4d2bc69a",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "לחפש"
+            }
+          },
+          {
+            "id": "2e3dd51701def535",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "סימניות"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "9b46d42956b39a66",
+    "type": "split",
+    "children": [
+      {
+        "id": "2d84bf9646c865f9",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "205b51db04f11832",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "קישורים נכנסים"
+            }
+          },
+          {
+            "id": "5fd9803996f0836c",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "קישורים יוצאים"
+            }
+          },
+          {
+            "id": "c147573ef44c9d1b",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "תגים"
+            }
+          },
+          {
+            "id": "9c0cdb6b85f4970b",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "כל המאפיינים"
+            }
+          },
+          {
+            "id": "e2f298b2bb0d0d97",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "מתווה"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:פתח את המחליף המהיר": false,
+      "graph:פתח תצוגת גרף": false,
+      "canvas:צור קנבס חדש": false,
+      "daily-notes:פתח את ההערה של היום": false,
+      "templates:הכנס תבנית": false,
+      "command-palette:פתח את לוח הפקודות": false,
+      "bases:צור בסיס חדש": false
+    }
+  },
+  "active": "1eb035d7abc28f5d",
+  "lastOpenFiles": [
+    "vault/Meeting Notes/stage-4-telegram-ai.md.tmp.1340.16ad4d1e55b4",
+    "vault/Meeting Notes/stage-4-telegram-ai.md",
+    "vault/Codebase/build-tooling.md.tmp.18680.d77a71861df5",
+    "vault/Codebase/build-tooling.md.tmp.18680.32d3263a65b0",
+    "vault/Codebase/hooks.md.tmp.18680.a8b40f6c89a2",
+    "vault/Codebase/schemas-validation.md.tmp.18680.f398a0de97f2",
+    "vault/Codebase/project-overview.md.tmp.18680.e5be2f51ac46",
+    "vault/Codebase/project-overview.md.tmp.18680.507bd56bd335",
+    "vault/Codebase/project-overview.md.tmp.18680.36f7c231c192",
+    "vault/Codebase/project-overview.md.tmp.18680.da8e2b4c6639",
+    "vault/Codebase/services-server.md.tmp.18680.9b4c1998694b",
+    "vault/Codebase/services-server.md.tmp.18680.8a60adea04b3",
+    "vault/Codebase/ai-agent.md",
+    "vault/Codebase/telegram-integration.md",
+    "vault/Meeting Notes/firebase-env-setup.md",
+    "vault/Meeting Notes/_index.md",
+    "vault/Meeting Notes/vault-bootstrap.md",
+    "vault/Brand Guidelines/_index.md",
+    "vault/Brand Guidelines/design-system.md",
+    "vault/Codebase/toasts-notifications.md",
+    "vault/Codebase/marketing-site.md",
+    "vault/Codebase/settings-feature.md",
+    "vault/Codebase/dashboard-feature.md",
+    "vault/Codebase/tags-feature.md",
+    "vault/Codebase/projects-feature.md",
+    "vault/Codebase/tasks-feature.md",
+    "vault/Codebase/app-routing.md",
+    "vault/Codebase/layout-shell.md",
+    "vault/Codebase/components-common.md",
+    "vault/Codebase/ui-primitives.md",
+    "vault/Codebase/constants.md",
+    "vault/Codebase/utils.md",
+    "vault/Codebase/hooks.md",
+    "vault/Codebase/auth.md",
+    "vault/Codebase/api-client.md",
+    "vault/Codebase/data-fetching-query.md"
+  ]
+}

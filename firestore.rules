@@ -1,0 +1,72 @@
+rules_version = '2';
+
+// A2Z Tasks — multi-tenant isolation at the database layer.
+//
+// Posture: every write in this system goes through `/api/v1/*`, which verifies a
+// Firebase ID token and uses the Admin SDK. The Admin SDK bypasses these rules
+// entirely, so what follows governs exactly one thing: the browser's direct
+// `onSnapshot` read path.
+//
+// That makes `allow write: if false` the strongest statement here. It turns
+// "the UI never writes to Firestore directly" from a convention the code is
+// expected to honour into an invariant the database enforces.
+//
+// Reads are owner-scoped. Because Firestore evaluates rules per document and
+// rejects any query it cannot prove is safe, `owns()` also forces every client
+// query to carry `where('userId', '==', uid)` — see src/services/client/refs.ts.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    // `doc` is `resource.data` — the document as stored, never the request.
+    function owns(doc) {
+      return signedIn() && request.auth.uid == doc.userId;
+    }
+
+    match /tasks/{taskId} {
+      allow read: if owns(resource.data);
+      allow write: if false;
+    }
+
+    match /projects/{projectId} {
+      allow read: if owns(resource.data);
+      allow write: if false;
+    }
+
+    match /tags/{tagId} {
+      allow read: if owns(resource.data);
+      allow write: if false;
+    }
+
+    // The profile mirror is keyed by uid, so ownership is the document id.
+    match /users/{uid} {
+      allow read: if signedIn() && request.auth.uid == uid;
+      allow write: if false;
+    }
+
+    // Integration records hold an encrypted Telegram bot token and the webhook
+    // secret that authenticates Telegram's callbacks. Unlike every other
+    // collection here, they are denied to the *owner* as well: the browser has
+    // no reason to see them, and `GET /api/v1/integrations/telegram` returns a
+    // status projection that structurally cannot carry a secret. Denying reads
+    // is what keeps that projection the only path.
+    match /integrations/{uid} {
+      allow read, write: if false;
+    }
+
+    // Per-chat conversation state for the Telegram agent: recent turns and the
+    // action awaiting confirmation. Server-only for the same reason.
+    match /agentSessions/{sessionId} {
+      allow read, write: if false;
+    }
+
+    // Default deny. Anything not matched above is unreachable from a client.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
