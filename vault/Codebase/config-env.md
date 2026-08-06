@@ -42,7 +42,8 @@
 
 ## Open Questions
 - `NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID` נקרא ומאומת אך אף מודול לא צורך אותו — Analytics לא מאותחל בשום מקום.
-- `env.appEnv` משמש רק לבקרת פירוט השגיאות ב-`ErrorState`; אין הבדל התנהגותי אחר בין staging ל-production.
+- **`env.appEnv` כבר לא שולט בשום התנהגות.** הצרכן היחיד שלו היה `ErrorState`, שעבר ב-2026-08-06 ל-`NODE_ENV` — כי `NEXT_PUBLIC_APP_ENV` נופל ל-`"development"` כברירת מחדל, ולכן תקלת אספקה **נכשלת לכיוון הפתוח** ומדפיסה פנימיות למשתמשים. מכאן ואילך הוא נתון דיווח ב-`/api/health` בלבד; אם משהו עתידי ירצה להסתמך עליו, לשקול קודם `NODE_ENV`.
+- **משתני סביבה ברמת ה-backend גוברים על `apphosting.yaml`.** אומת ב-2026-08-06: `appBaseUrlSet: true` (משתנה RUNTIME מהקובץ מגיע) לצד `appEnvAtRuntime: "development"` (ערך אמיתי, לא חסר) בזמן שהקובץ מצהיר `production`. כלומר הקובץ אינו מקור יחיד לאמת, ויש להסיר את הדריסות בקונסולה.
 - `APP_BASE_URL` אופציונלי; ללא מנהרה ציבורית Telegram פשוט לא ימסור עדכונים בסביבה מקומית. בפרודקשן הוא מוגדר ב-`apphosting.yaml`.
 - `OPENAI_API_KEY` ו-`SECRET_ENCRYPTION_KEY` **לא** מוצהרים ב-`apphosting.yaml` — הם סודות אמיתיים והריפו ציבורי. הם מוגדרים כרגע ברמת ה-backend; אם rollout יפיל אותם, המקום הנכון הוא Secret Manager עם `secret:` ולא `value:`.
 - ב-`.env.local` המקומי `OPENAI_API_KEY` כתוב באותיות קטנות. עובד רק כי `process.env` ב-Windows אינו רגיש לרישיות.
@@ -79,3 +80,16 @@
   מוגדרים ברמת ה-backend; זו הסיבה שהאימות שאחרי הפריסה בודק את ארבעת הדגלים
   ולא רק את שניים.
 - **Related:** [[firebase-env-setup]], [[firebase-integration]], [[telegram-integration]], [[api-routes]]
+
+### 2026-08-06 — אבחון האספקה בפרודקשן [shipped]
+- **What was done:** נוספו ל-`/api/health` שני שדות אבחון: `appEnvAtRuntime`
+  (נקרא דרך מפתח שנבנה בזמן ריצה, כדי שה-bundler לא יחליף אותו בערך מהבנייה)
+  ו-`appBaseUrlSet`. הזוג הזה מפריד בין "המשתנה לא נכנס ל-bundle" לבין "המשתנה
+  לא נכנס לקונטיינר", ומכאן נמצא ש-`apphosting.yaml` **כן** נאכף אבל נדרס.
+- **Decisions:** להעביר את `ErrorState` ל-`NODE_ENV` במקום לתקן את אספקת
+  `NEXT_PUBLIC_APP_ENV`. תיקון האספקה מחזיר את המצב לתקין; המעבר ל-`NODE_ENV`
+  מוציא את ההחלטה מהשרשרת השבירה לגמרי, כי `NODE_ENV` נכתב ע"י ה-bundler ואינו
+  ניתן לשכיחה בהגדרות.
+- **Notes / Caveats:** השדות מסומנים בקוד כזמניים — למחוק כשהדריסות בקונסולה
+  ינוקו. אף אחד מהם אינו סוד.
+- **Related:** [[firebase-env-setup]], [[firebase-integration]], [[stage-4-telegram-ai]], [[components-common]]

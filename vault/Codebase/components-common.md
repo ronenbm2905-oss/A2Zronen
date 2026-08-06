@@ -43,3 +43,15 @@
 - **Decisions:** `toaster.tsx` נשאר בטבלה כאן (זה מיקומו בפועל) אך מתועד לעומק ב-[[toasts-notifications]] יחד עם החנות וה-hook שלו.
 - **Notes / Caveats:** ההבחנה ui/ מול common/ אינה נאכפת ע"י כלום — רק ע"י שיפוט. רכיב שמייבא מ-`@/types` או `@/constants` שייך כאן, לא ב-`ui/`.
 - **Related:** [[ui-primitives]], [[hooks]], [[errors-handling]], [[dashboard-feature]], [[app-routing]]
+
+### 2026-08-06 — `ErrorState` נגמל מ-`NEXT_PUBLIC_APP_ENV` [shipped]
+- **What was done:** התנאי שמציג את הודעת השגיאה הגולמית עבר מ-`env.isDevelopment`
+  ל-`process.env.NODE_ENV !== "production"`. ה-import של `@/config/env` הוסר.
+- **Decisions:** לא סגנון אלא כיוון כשל. `NEXT_PUBLIC_APP_ENV` נופל ל-
+  `"development"` כברירת מחדל כשהוא לא מגיע, ולכן טעות בשרשרת האספקה **נכשלת
+  לכיוון הפתוח** ומתחילה להדפיס `AppError.code` ו-stack למשתמשים אמיתיים. זה לא
+  היפותטי: פרודקשן דיווחה `development` בדיוק מהסיבה הזו. `NODE_ENV` נכתב ע"י
+  ה-bundler בזמן הבנייה ואינו דורש הגדרה, ולכן אותה טעות כבר לא מגיעה לכאן.
+- **Notes / Caveats:** `env.appEnv` נשאר בקוד, אבל מרגע זה אין לו אף צרכן
+  התנהגותי — רק דיווח ב-`/api/health`. ראה [[config-env]].
+- **Related:** [[config-env]], [[errors-handling]], [[firebase-integration]], [[stage-4-telegram-ai]]

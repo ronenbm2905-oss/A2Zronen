@@ -41,11 +41,13 @@
 ## Open Questions
 - **האינדקסים חייבים להיפרס לפני שמנוי realtime יעבוד.** שלוש השאילתות ב-[[services-client]] דורשות אינדקס מורכב; בלעדיו `onSnapshot` נכשל ב-`failed-precondition`. נפרסו ב-2026-08-05 — ראה [[firebase-env-setup]]. כל שאילתה חדשה עם `where` + `orderBy` תדרוש אינדקס נוסף ופריסה מחדש.
 - `verifyIdToken` נקרא עם `checkRevoked: false` ב-[[auth]]; ביטול טוקן מיידי בעת התנתקות לא נתמך כרגע.
-- **אימות וחתימה הן שתי יכולות נפרדות.** ADC מספיק לקריאה/כתיבה מול Firestore
-  ו-Auth, אבל `createCustomToken` **חותם** JWT: עם מפתח מפורש החתימה מקומית, על ADC
-  היא מואצלת ל-IAM signBlob ודורשת `roles/iam.serviceAccountTokenCreator`. אומת
-  ב-2026-08-06: `adminCanSignTokens` הוא `true` מקומית ו-`false` בפרודקשן. עד
-  שההרשאה תינתן, כל פעולה של [[ai-agent]] נכשלת ברגע האישור.
+- **אימות וחתימה הן שתי יכולות נפרדות — נפתר, ונשאר כאן כאזהרה.** ADC מספיק
+  לקריאה/כתיבה מול Firestore ו-Auth, אבל `createCustomToken` **חותם** JWT: עם
+  מפתח מפורש החתימה מקומית, על ADC היא מואצלת ל-IAM signBlob ודורשת
+  `roles/iam.serviceAccountTokenCreator`. ההרשאה ניתנה ב-2026-08-06
+  ל-`firebase-app-hosting-compute@a2zronen` ו-`adminCanSignTokens` התהפך ל-`true`.
+  **כל סביבה חדשה שרצה על ADC תצטרך את אותה הרשאה**, אחרת [[ai-agent]] ייכשל
+  ברגע האישור בלבד — שאר המערכת תיראה תקינה לגמרי.
 
 ## Session Log
 

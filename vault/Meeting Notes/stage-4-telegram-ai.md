@@ -39,14 +39,15 @@ chatId                                → הצ׳אט הזה תפס את הבוט
 ```
 
 ## Open Questions
-- **הצעד הבא, וזה החוסם היחיד:** לתת `roles/iam.serviceAccountTokenCreator`
-  ל-`firebase-app-hosting-compute@a2zronen` ב-**Google Cloud console**
-  (`console.cloud.google.com/iam-admin/iam?project=a2zronen`) — לא בקונסולה של
-  Firebase. לאמת ש-`adminCanSignTokens` הפך ל-`true`, ואז ליצור משימה מהבוט.
-  חלופה: `FIREBASE_PRIVATE_KEY` דרך Secret Manager ב-`apphosting.yaml`.
+- **זמן תגובה בפרודקשן לא נמדד.** `minInstances: 0` פירושו cold start, והעבודה
+  רצה ב-`after()` — כלומר אחרי שהתשובה נשלחה, כשהקצאת ה-CPU ב-Cloud Run עשויה
+  להיחנק. המשתמש שלח את אותה בקשה פעמיים ב-2026-08-06 כי לא ראה תשובה בזמן.
+  לא נמדד ולא הוכח; אם יאושש, המחיר הוא `minInstances: 1` או CPU always-allocated.
 - החוקים החדשים ב-`firestore.rules` לא נפרסו. לא חוסם (ה-default deny כבר מכסה),
   אבל שווה פריסה.
-- `/api/health` מדווח `environment: development` בפרודקשן — ראה [[firebase-env-setup]].
+- **ל-backend יש משתני סביבה ברמת הקונסולה שגוברים על `apphosting.yaml`**, ואחד
+  מהם הוא `NEXT_PUBLIC_APP_ENV=development`. לנקות אותם כדי שהקובץ יהיה מקור
+  יחיד — ראה [[config-env]].
 - **`OPENAI_API_KEY` כתוב ב-`.env.local` באותיות קטנות** (`openai_api_key`). עובד
   רק כי `process.env` ב-Windows אינו רגיש לרישיות; פריסה ל-Linux תשבור את ה-agent
   בשקט. לתקן לפני deploy.
@@ -129,3 +130,26 @@ chatId                                → הצ׳אט הזה תפס את הבוט
   לקח כללי: שלושת הכשלים נראו זהים מבחוץ ("הבוט לא עובד") ונדרשו שלושה אבחונים
   שונים לגמרי.
 - **Related:** [[ai-agent]], [[telegram-integration]], [[firebase-integration]], [[firebase-env-setup]], [[config-env]], [[auth]]
+
+### 2026-08-06 — הבוט עובד מקצה לקצה [shipped]
+- **What was done:** ההרשאה `roles/iam.serviceAccountTokenCreator` ניתנה
+  ל-`firebase-app-hosting-compute@a2zronen`, ו-`adminCanSignTokens` התהפך
+  ל-`true` תוך פחות מדקה, בלי פריסה מחדש. מיד אחר כך נוצרו שתי משימות אמיתיות
+  מהבוט (`לקנות חלב` 06:00:53Z, `לעשות קניות` 06:02:40Z), ו-`pendingAction` נשאר
+  ריק — כלומר מחזור האישור נסגר במלואו. **שלב 4 מאומת בפרודקשן.**
+  בנוסף: `ErrorState` הוצמד ל-`NODE_ENV` במקום ל-`env.isDevelopment`.
+- **Decisions:** נבחרה ההרשאה ולא Secret Manager — אין מפתח ארוך-טווח לנהל,
+  והיא נכנסת בלי פריסה. הדגל `adminCanSignTokens` הוכיח את עצמו: הוא זה שסימן
+  את רגע הפתיחה, ולא ניחוש.
+  ההצמדה של `ErrorState` ל-`NODE_ENV` היא שינוי מהותי ולא סגנוני:
+  `NEXT_PUBLIC_APP_ENV` נופל ל-`"development"` כברירת מחדל, ולכן תקלת פריסה
+  **נכשלת לכיוון הפתוח** ומדפיסה פנימיות למשתמשים. `NODE_ENV` נכתב ע"י ה-bundler
+  ואינו דורש שרשרת אספקה.
+- **Notes / Caveats:** האבחון שהוסף ל-`/api/health` הכריע גם את תעלומת הסביבה:
+  `appBaseUrlSet: true` (משתני RUNTIME מ-`apphosting.yaml` כן מגיעים) לצד
+  `appEnvAtRuntime: "development"` (ערך אמיתי, לא חסר) מוכיחים יחד שקיימים
+  משתנים ברמת הקונסולה שגוברים על הקובץ. תומך בכך: `OPENAI_API_KEY` ו-
+  `SECRET_ENCRYPTION_KEY` מדווחים כמוגדרים ואינם בקובץ כלל.
+  המשתמש דיווח «אין תגובה מהבוט» בזמן שהמשימות כן נוצרו — התלונה הייתה על
+  latency, לא על כשל. נרשם ב-Open Questions.
+- **Related:** [[firebase-integration]], [[config-env]], [[ai-agent]], [[telegram-integration]], [[firebase-env-setup]], [[components-common]]
