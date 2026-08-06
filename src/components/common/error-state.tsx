@@ -3,7 +3,6 @@
 import { AlertTriangle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { env } from "@/config/env";
 import { isAppError } from "@/lib/errors";
 import { toHebrewMessage } from "@/lib/errors/messages.he";
 import { cn } from "@/lib/utils";
@@ -22,6 +21,14 @@ interface ErrorStateProps {
  * shown only in development, where it is the difference between "something went
  * wrong" and "you are missing a composite index, here is the URL to create it".
  * In production it would only leak internals.
+ *
+ * The gate is `NODE_ENV`, not `env.isDevelopment`. Both answer the same
+ * question, but `NEXT_PUBLIC_APP_ENV` is a value we have to deliver correctly
+ * through the deployment, and it defaults to `"development"` when it fails to
+ * arrive — so a plumbing mistake fails *open* and starts printing internals to
+ * real users. That is not hypothetical: production reported `development` for
+ * exactly this reason. `NODE_ENV` is written by the bundler at build time and
+ * needs no configuration, so the same mistake can no longer reach here.
  */
 export function ErrorState({
   error,
@@ -49,7 +56,7 @@ export function ErrorState({
         <p className="mx-auto max-w-sm text-sm text-muted-foreground">{message}</p>
       </div>
 
-      {env.isDevelopment && technical ? (
+      {process.env.NODE_ENV !== "production" && technical ? (
         <pre className="max-w-full overflow-x-auto rounded-md bg-background/60 p-3 text-start text-xs text-muted-foreground" dir="ltr">
           {technical}
         </pre>
